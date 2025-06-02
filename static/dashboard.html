@@ -1,0 +1,878 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Interactive Topic Dashboard</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        .container {
+            max-width: 1100px;
+            margin: 2em auto;
+            background: #fff;
+            border-radius: 18px;
+            box-shadow: 0 4px 24px rgba(0,0,0,0.08);
+            padding: 2.5em 2em 2em 2em;
+        }
+        h2, h3, .section-title {
+            color: #1976d2;
+            font-family: 'Roboto', Arial, sans-serif;
+            font-weight: 700;
+            letter-spacing: 0.5px;
+        }
+        h2 {
+            text-align: center;
+            margin-bottom: 1.5em;
+        }
+        .section-title {
+            margin-top: 2em;
+            font-size: 1.15em;
+            margin-bottom: 0.7em;
+        }
+        button {
+            background: linear-gradient(90deg, #1976d2 60%, #42a5f5 100%);
+            color: #fff;
+            border: none;
+            border-radius: 8px;
+            padding: 0.6em 1.7em;
+            font-size: 1em;
+            font-weight: bold;
+            cursor: pointer;
+            box-shadow: 0 2px 8px rgba(25, 118, 210, 0.08);
+            transition: background 0.2s, box-shadow 0.2s;
+            margin-bottom: 0.5em;
+        }
+        button:hover {
+            background: linear-gradient(90deg, #1565c0 60%, #1976d2 100%);
+            box-shadow: 0 4px 16px rgba(25, 118, 210, 0.13);
+        }
+        select, input[type="number"] {
+            border-radius: 6px;
+            border: 1.2px solid #b0bec5;
+            padding: 0.4em 0.7em;
+            font-size: 1em;
+            background: #f5f7fa;
+            margin-right: 1em;
+            margin-bottom: 0.5em;
+            transition: border 0.2s;
+        }
+        select:focus, input[type="number"]:focus {
+            border: 1.2px solid #1976d2;
+            outline: none;
+        }
+        .result-table {
+            border-collapse: collapse;
+            margin-top: 1em;
+            width: 100%;
+            background: #f9fbfd;
+            border-radius: 10px;
+            overflow: hidden;
+            box-shadow: 0 2px 8px rgba(25, 118, 210, 0.04);
+        }
+        .result-table th, .result-table td {
+            border: 1px solid #e3eaf2;
+            padding: 10px 8px;
+            text-align: left;
+        }
+        .result-table th {
+            background: #e3f0fa;
+            color: #1976d2;
+            font-weight: 600;
+        }
+        .result-table tr:nth-child(even) {
+            background: #f5f7fa;
+        }
+        .card {
+            background: #fafafa;
+            border: 1px solid #eee;
+            border-radius: 10px;
+            padding: 1.2em 1em;
+            margin-bottom: 1.2em;
+            box-shadow: 0 2px 8px rgba(25, 118, 210, 0.04);
+        }
+        .chart-section {
+            margin-top: 2em;
+            background: #f5f7fa;
+            border-radius: 10px;
+            padding: 1.5em 1em 1em 1em;
+            box-shadow: 0 2px 8px rgba(25, 118, 210, 0.04);
+        }
+        label {
+            font-weight: 500;
+            color: #333;
+            margin-right: 0.5em;
+        }
+        @media (max-width: 900px) {
+            .container { padding: 1em; }
+            .chart-section { padding: 1em 0.2em 0.5em 0.2em; }
+            .result-table th, .result-table td { padding: 7px 4px; }
+        }
+        .progress-bar-container {
+            width: 100%;
+            background: #e3eaf2;
+            border-radius: 8px;
+            margin: 1em 0 0.5em 0;
+            height: 18px;
+            overflow: hidden;
+            display: none;
+        }
+        .progress-bar {
+            height: 100%;
+            width: 0%;
+            background: linear-gradient(90deg, #1976d2 60%, #42a5f5 100%);
+            border-radius: 8px;
+            transition: width 0.4s ease;
+            animation: progress-bar-stripes 1.2s linear infinite;
+        }
+        @keyframes progress-bar-stripes {
+            0% { background-position: 0 0; }
+            100% { background-position: 40px 0; }
+        }
+    </style>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body style="background:#f7f9fb;margin:0;padding:0;font-family:'Roboto',Arial,sans-serif;color:#222;">
+    <div class="container">
+        <h2>Interactive Topic Dashboard</h2>
+        <!-- Trending Posts Section -->
+        <div id="trending-section" class="card">
+            <div class="section-title">Trending Posts</div>
+            <button id="showTrendingBtn">Show Trending Posts</button>
+            <select id="trendingPostsCountSelect">
+                <option value="5" selected>5</option>
+                <option value="10">10</option>
+                <option value="20">20</option>
+                <option value="50">50</option>
+                <option value="100">100</option>
+            </select>
+            <button id="showTrendingFullBtn">Show Most Trending Posts (Full Data)</button>
+            <div id="trendingProgress" style="display:none; color: #1565c0; font-weight: bold;">Loading trending posts...</div>
+            <div id="trendingPosts"></div>
+            <div id="trendingPostsFull"></div>
+            <div class="chart-section">
+                <canvas id="trendingPostsChart" width="600" height="300" style="display:none;"></canvas>
+                <canvas id="trendingPostsFullChart" width="600" height="300" style="display:none;"></canvas>
+            </div>
+        </div>
+        <!-- Trending Topics Section -->
+        <div id="trending-topics-section" class="card">
+            <div class="section-title">Trending Topics</div>
+            <button id="showTrendingTopicsBtn">Show Trending Topics</button>
+            <div id="trendingTopicsProgress" style="display:none; color: #1565c0; font-weight: bold;">Loading trending topics...</div>
+            <div id="trendingTopics"></div>
+            <div class="chart-section">
+                <canvas id="trendingTopicsChart" width="600" height="300" style="display:none;"></canvas>
+            </div>
+            <label for="trendingTopicsRankingSelect">Rank by:</label>
+            <select id="trendingTopicsRankingSelect">
+                <option value="momentum" selected>Momentum (Δ Views)</option>
+                <option value="avg_views">Avg Views</option>
+                <option value="emerging">Emerging (Spiking)</option>
+            </select>
+        </div>
+        <!-- Topic Explorer Section -->
+        <div id="topic-explorer-section" class="card">
+            <div class="section-title">Topic Explorer</div>
+            <button id="showTopicExplorerBtn">Explore Topics</button>
+            <div id="topicExplorer" style="display:none;">
+                <label for="topicSelect">Select Topic:</label>
+                <select id="topicSelect"></select>
+                <div id="topicWordsProgress" style="display:none; color: #1565c0; font-weight: bold;">Loading topic words...</div>
+                <div class="chart-section">
+                    <canvas id="topicWordsChart" width="600" height="300" style="display:none;"></canvas>
+                </div>
+            </div>
+        </div>
+        <!-- Topic Trends Section -->
+        <div id="topic-trends-section" class="card">
+            <div class="section-title">Topic Trends</div>
+            <button id="showTopicTrendsBtn">Show Topic Trends</button>
+            <div id="topicTrendsProgress" style="display:none; color: #1565c0; font-weight: bold;">Loading topic trends...</div>
+            <div class="chart-section">
+                <canvas id="topicTrendsChart" width="900" height="400" style="display:none;"></canvas>
+            </div>
+        </div>
+        <!-- Add Topic Clusters Section -->
+        <div id="topic-clusters-section" class="card">
+            <div class="section-title">Topic Clusters</div>
+            <button id="showTopicClustersBtn">Show Topic Clusters</button>
+            <label for="topicClustersThreshold">Distance threshold:</label>
+            <input type="number" id="topicClustersThreshold" min="0.01" max="1" step="0.01" value="0.05">
+            <div id="topicClustersProgress" style="display:none; color: #1565c0; font-weight: bold;">Loading topic clusters...</div>
+            <div id="topicClusters"></div>
+        </div>
+        <!-- Add Topic Clusters Visualization Section -->
+        <div id="topicClustersPlotSection" class="card">
+            <div class="section-title">Topic Clusters Visualization</div>
+            <label for="topicClustersPlotMethod">Method:</label>
+            <select id="topicClustersPlotMethod">
+                <option value="umap" selected>UMAP</option>
+                <option value="tsne">t-SNE</option>
+            </select>
+            <button id="showTopicClustersPlotBtn" style="margin-left:1em;">Show Visualization</button>
+            <div style="margin-top:1em;"><img id="topicClustersPlotImg" src="/api/topic_clusters_plot?distance_threshold=0.2&method=umap" style="max-width:100%;border:1px solid #ccc;"></div>
+        </div>
+        <!-- Trending Clusters Section -->
+        <div id="trendingClustersSection" class="card">
+            <div class="section-title">Trending Clusters</div>
+            <button id="showTrendingClustersBtn">Show Trending Clusters</button>
+            <button id="showTrendingClustersMovingAvgBtn" style="margin-left:1em;">Show Trending Clusters (3-month Moving Avg)</button>
+            <div id="trendingClustersProgress" style="display:none; color: #1565c0; font-weight: bold;">Loading trending clusters...</div>
+            <div id="trendingClusters"></div>
+            <div id="trendingClustersMovingAvg" style="margin-top:1.5em;"></div>
+        </div>
+    </div>
+    <script>
+        // Trending Posts (snippet)
+        document.getElementById('showTrendingBtn').onclick = async function() {
+            document.getElementById('trendingProgress').style.display = 'block';
+            document.getElementById('trendingPosts').innerHTML = '';
+            document.getElementById('trendingPostsFull').innerHTML = '';
+            document.getElementById('trendingPostsChart').style.display = 'none';
+            document.getElementById('trendingPostsFullChart').style.display = 'none';
+            const n = document.getElementById('trendingPostsCountSelect').value;
+            const response = await fetch(`/api/trending_posts?n=${n}`);
+            const data = await response.json();
+            const posts = data.posts || [];
+            document.getElementById('trendingProgress').style.display = 'none';
+            let dateRangeHtml = '';
+            if (data.date_range && data.date_range.min && data.date_range.max) {
+                dateRangeHtml = `<div style='margin-bottom:0.5em;color:#333;'>Date range: <b>${data.date_range.min.slice(0,10)}</b> to <b>${data.date_range.max.slice(0,10)}</b></div>`;
+            }
+            if (data.message) {
+                dateRangeHtml += `<div style='color:#b71c1c;font-weight:bold;'>${data.message}</div>`;
+            }
+            let html = dateRangeHtml + '<div class="section-title">Trending Posts (last 30 days)</div>';
+            if (posts.length === 0) {
+                html += '<div>No trending posts available.</div>';
+                document.getElementById('trendingPosts').innerHTML = html;
+                document.getElementById('trendingPostsChart').style.display = 'none';
+                return;
+            }
+            html += '<table class="result-table"><tr><th>ID</th><th>Date</th><th>Topic</th><th>Views</th><th>Comments</th><th>Hubs</th><th>Text Snippet</th></tr>';
+            for (const post of posts) {
+                html += `<tr><td>${post.id ?? ''}</td><td>${post.date ? post.date.toString().slice(0, 19) : ''}</td><td>${post.topic ?? ''}</td><td>${post.views ?? ''}</td><td>${post.comments_count ?? ''}</td><td>${post.hubs ?? ''}</td><td>${(post.text || '').slice(0, 80)}...</td></tr>`;
+            }
+            html += '</table>';
+            document.getElementById('trendingPosts').innerHTML = html;
+            // Bar chart for views
+            if (posts.length > 0) {
+                const ctx = document.getElementById('trendingPostsChart').getContext('2d');
+                document.getElementById('trendingPostsChart').style.display = 'block';
+                if (window.trendingPostsChart && typeof window.trendingPostsChart.destroy === 'function') {
+                    window.trendingPostsChart.destroy();
+                }
+                window.trendingPostsChart = new Chart(ctx, {
+                    type: 'bar',
+                    data: {
+                        labels: posts.map(p => p.id),
+                        datasets: [{
+                            label: 'Views',
+                            data: posts.map(p => p.views),
+                            backgroundColor: 'rgba(255, 152, 0, 0.6)'
+                        }]
+                    },
+                    options: {
+                        plugins: {
+                            tooltip: {
+                                callbacks: {
+                                    label: function(context) {
+                                        let label = context.dataset.label + ': ' + context.parsed.y;
+                                        let idx = context.dataIndex;
+                                        let snippet = posts[idx].text ? posts[idx].text.slice(0, 80) : '';
+                                        if (snippet) label += '\n' + snippet + '...';
+                                        return label;
+                                    }
+                                }
+                            }
+                        },
+                        scales: {
+                            y: { beginAtZero: true }
+                        }
+                    }
+                });
+            } else {
+                document.getElementById('trendingPostsChart').style.display = 'none';
+            }
+        };
+        // Trending Posts (full data)
+        let trendingTextCol = 'text';
+        let trendingPostsCache = [];
+        let trendingPostIndex = 0;
+        function renderTrendingPostsFull(posts, textCol, dateRangeHtml, message) {
+            trendingPostsCache = posts;
+            trendingTextCol = textCol;
+            // Dropdown for post ID selection and navigation
+            let html = dateRangeHtml + '<div class="section-title">Most Trending Posts (Full Data, last 30 days)</div>';
+            if (posts.length === 0) {
+                html += '<div>No trending posts available.</div>';
+                document.getElementById('trendingPostsFull').innerHTML = html;
+                document.getElementById('trendingPostsFullChart').style.display = 'none';
+                return;
+            }
+            // Text column selector
+            html += `<label for='trendingTextColSelect'>Text column:</label> <select id='trendingTextColSelect'></select>`;
+            // Post ID selector
+            html += ` <label for='trendingPostIdSelect'>Post ID:</label> <select id='trendingPostIdSelect'></select>`;
+            html += ` <button id='trendingPrevBtn'>&lt; Prev</button> <button id='trendingNextBtn'>Next &gt;</button>`;
+            // Card for selected post
+            html += `<div id='trendingPostCard' style='margin-top:1em; border:1px solid #ccc; border-radius:8px; padding:1em; background:#fafafa;'></div>`;
+            // Table (hidden when browsing one by one)
+            html += `<div id='trendingPostsFullTable' style='display:none;'></div>`;
+            document.getElementById('trendingPostsFull').innerHTML = html;
+            // Populate text column selector
+            const textColSelect = document.getElementById('trendingTextColSelect');
+            const textCols = Object.keys(posts[0]).filter(k => k.startsWith('text'));
+            textColSelect.innerHTML = '';
+            for (const col of textCols) {
+                const opt = document.createElement('option');
+                opt.value = col;
+                opt.text = col;
+                if (col === textCol) opt.selected = true;
+                textColSelect.appendChild(opt);
+            }
+            textColSelect.onchange = function() {
+                trendingTextCol = this.value;
+                renderTrendingPostsFull(posts, trendingTextCol, dateRangeHtml, message);
+            };
+            // Populate post ID selector
+            const postIdSelect = document.getElementById('trendingPostIdSelect');
+            postIdSelect.innerHTML = '';
+            for (let i = 0; i < posts.length; ++i) {
+                const opt = document.createElement('option');
+                opt.value = i;
+                opt.text = posts[i].id ?? `#${i+1}`;
+                postIdSelect.appendChild(opt);
+            }
+            // Card rendering function
+            let topicWordsCache = {};
+            async function renderCard(idx) {
+                trendingPostIndex = idx;
+                postIdSelect.value = idx;
+                const post = posts[idx];
+                let card = `<b>ID:</b> ${post.id ?? ''}<br>`;
+                card += `<b>Date:</b> ${post.date ? post.date.toString().slice(0, 19) : ''}<br>`;
+                card += `<b>Topic:</b> ${post.topic ?? ''}`;
+                // Topic words
+                if (post.topic !== undefined && post.topic !== null) {
+                    card += ` <span id='topicWordsSpan'></span>`;
+                    if (topicWordsCache[post.topic] !== undefined) {
+                        const words = topicWordsCache[post.topic].map(ws => ws[0]);
+                        if (words.length > 0) {
+                            card += `<br><b>Top words:</b> ${words.join(', ')}`;
+                            setTimeout(() => {
+                                document.getElementById('topicWordsSpan').innerHTML = `<br><b>Top words:</b> ${words.join(', ')}`;
+                            }, 0);
+                        } else {
+                            card += `<br><b>Top words:</b> <i>No top words available for this topic.</i>`;
+                            setTimeout(() => {
+                                document.getElementById('topicWordsSpan').innerHTML = `<br><b>Top words:</b> <i>No top words available for this topic.</i>`;
+                            }, 0);
+                        }
+                    } else {
+                        // Fetch and cache
+                        fetch(`/api/topic_words/${post.topic}`).then(r => r.json()).then(wordsScores => {
+                            topicWordsCache[post.topic] = wordsScores;
+                            const words = wordsScores.map(ws => ws[0]);
+                            if (words.length > 0) {
+                                document.getElementById('topicWordsSpan').innerHTML = `<br><b>Top words:</b> ${words.join(', ')}`;
+                            } else {
+                                document.getElementById('topicWordsSpan').innerHTML = `<br><b>Top words:</b> <i>No top words available for this topic.</i>`;
+                            }
+                        });
+                    }
+                }
+                card += `<br><b>Views:</b> ${post.views ?? ''}<br>`;
+                card += `<b>Comments:</b> ${post.comments_count ?? ''}<br>`;
+                card += `<b>Hubs:</b> ${post.hubs ?? ''}<br>`;
+                card += `<b>${trendingTextCol}:</b><div style='max-width:600px;white-space:pre-wrap;background:#fff;border:1px solid #eee;margin-bottom:0.5em;padding:0.5em;'>${post[trendingTextCol] || ''}</div>`;
+                document.getElementById('trendingPostCard').innerHTML = card;
+            }
+            // Initial card
+            renderCard(trendingPostIndex);
+            postIdSelect.onchange = function() {
+                renderCard(Number(this.value));
+            };
+            document.getElementById('trendingPrevBtn').onclick = function() {
+                if (trendingPostIndex > 0) {
+                    renderCard(trendingPostIndex - 1);
+                }
+            };
+            document.getElementById('trendingNextBtn').onclick = function() {
+                if (trendingPostIndex < posts.length - 1) {
+                    renderCard(trendingPostIndex + 1);
+                }
+            };
+            // Bar chart for views (remains visible)
+            if (posts.length > 0) {
+                const ctx = document.getElementById('trendingPostsFullChart').getContext('2d');
+                document.getElementById('trendingPostsFullChart').style.display = 'block';
+                if (window.trendingPostsFullChart && typeof window.trendingPostsFullChart.destroy === 'function') {
+                    window.trendingPostsFullChart.destroy();
+                }
+                window.trendingPostsFullChart = new Chart(ctx, {
+                    type: 'bar',
+                    data: {
+                        labels: posts.map(p => p.id),
+                        datasets: [{
+                            label: 'Views',
+                            data: posts.map(p => p.views),
+                            backgroundColor: 'rgba(255, 87, 34, 0.6)'
+                        }]
+                    },
+                    options: {
+                        plugins: {
+                            tooltip: {
+                                callbacks: {
+                                    label: function(context) {
+                                        let label = context.dataset.label + ': ' + context.parsed.y;
+                                        let idx = context.dataIndex;
+                                        let text = posts[idx][textCol] ? posts[idx][textCol].slice(0, 200) : '';
+                                        if (text) label += '\n' + text + (text.length === 200 ? '...' : '');
+                                        return label;
+                                    }
+                                }
+                            }
+                        },
+                        scales: {
+                            y: { beginAtZero: true }
+                        }
+                    }
+                });
+            } else {
+                document.getElementById('trendingPostsFullChart').style.display = 'none';
+            }
+        }
+        document.getElementById('showTrendingFullBtn').onclick = async function() {
+            document.getElementById('trendingProgress').style.display = 'block';
+            document.getElementById('trendingPosts').innerHTML = '';
+            document.getElementById('trendingPostsFull').innerHTML = '';
+            document.getElementById('trendingPostsChart').style.display = 'none';
+            document.getElementById('trendingPostsFullChart').style.display = 'none';
+            const response = await fetch('/api/trending_posts?n=100');
+            const data = await response.json();
+            const posts = data.posts || [];
+            document.getElementById('trendingProgress').style.display = 'none';
+            let dateRangeHtml = '';
+            if (data.date_range && data.date_range.min && data.date_range.max) {
+                dateRangeHtml = `<div style='margin-bottom:0.5em;color:#333;'>Date range: <b>${data.date_range.min.slice(0,10)}</b> to <b>${data.date_range.max.slice(0,10)}</b></div>`;
+            }
+            if (data.message) {
+                dateRangeHtml += `<div style='color:#b71c1c;font-weight:bold;'>${data.message}</div>`;
+            }
+            renderTrendingPostsFull(posts, trendingTextCol, dateRangeHtml, data.message);
+        };
+        // Trending Topics
+        async function showTrendingTopics() {
+            document.getElementById('trendingTopicsProgress').style.display = 'block';
+            document.getElementById('trendingTopics').innerHTML = '';
+            document.getElementById('trendingTopicsChart').style.display = 'none';
+            const ranking = document.getElementById('trendingTopicsRankingSelect').value;
+            let topics = [], html = '', chartLabel = '', chartData = [], chartWords = [], chartTitle = '', chartYTitle = '', chartTooltip = null;
+            if (ranking === 'momentum') {
+                const response = await fetch('/api/trending_topics_over_time?period=M&top_n=10');
+                const data = await response.json();
+                topics = data.topics || [];
+                let periodLabel = data.period ? `Period: <b>${data.period}</b>` : '';
+                html = `<div style='margin-bottom:0.5em;color:#333;'>${periodLabel}</div>`;
+                html += '<div class="section-title">Trending Topics (by momentum, latest period)</div>';
+                if (topics.length === 0) {
+                    html += '<div>No trending topics available.</div>';
+                    document.getElementById('trendingTopics').innerHTML = html;
+                    document.getElementById('trendingTopicsChart').style.display = 'none';
+                    document.getElementById('trendingTopicsProgress').style.display = 'none';
+                    return;
+                }
+                html += '<table class="result-table"><tr><th>Topic ID</th><th>Top Words</th><th>Avg Views</th><th>Δ Views (Momentum)</th></tr>';
+                for (const topic of topics) {
+                    html += `<tr>
+                        <td>${topic.topic_id}</td>
+                        <td>${(topic.top_words || []).join(', ')}</td>
+                        <td>${topic.avg_views?.toFixed(1) ?? ''}</td>
+                        <td>${topic.delta_views !== null ? topic.delta_views.toFixed(1) : 'N/A'}</td>
+                    </tr>`;
+                }
+                html += '</table>';
+                chartLabel = 'Δ Views (Momentum)';
+                chartData = topics.map(t => t.delta_views);
+                chartWords = topics.map(t => t.top_words ? t.top_words.join(', ') : '');
+                chartTitle = 'Trending Topics by Momentum';
+                chartYTitle = 'Δ Views (Momentum)';
+                chartTooltip = (context, topics) => {
+                    let label = context.dataset.label + ': ' + context.parsed.y;
+                    let idx = context.dataIndex;
+                    let words = topics[idx].top_words ? topics[idx].top_words.join(', ') : '';
+                    if (words) label += '\nTop words: ' + words;
+                    return label;
+                };
+            } else if (ranking === 'avg_views') {
+                const response = await fetch('/api/top_topics?n=10');
+                const data = await response.json();
+                topics = data.topics || [];
+                let dateRangeHtml = '';
+                if (data.date_range && data.date_range.min && data.date_range.max) {
+                    dateRangeHtml = `<div style='margin-bottom:0.5em;color:#333;'>Date range: <b>${data.date_range.min.slice(0,10)}</b> to <b>${data.date_range.max.slice(0,10)}</b></div>`;
+                }
+                html = dateRangeHtml + '<div class="section-title">Trending Topics (by average views, last 30 days)</div>';
+                if (topics.length === 0) {
+                    html += '<div>No trending topics available.</div>';
+                    document.getElementById('trendingTopics').innerHTML = html;
+                    document.getElementById('trendingTopicsChart').style.display = 'none';
+                    document.getElementById('trendingTopicsProgress').style.display = 'none';
+                    return;
+                }
+                html += '<table class="result-table"><tr><th>Topic ID</th><th>Top Words</th><th>Avg Views</th></tr>';
+                for (const topic of topics) {
+                    html += `<tr><td>${topic.topic_id}</td><td>${(topic.top_words || []).join(', ')}</td><td>${topic.avg_views?.toFixed(1) ?? ''}</td></tr>`;
+                }
+                html += '</table>';
+                chartLabel = 'Avg Views';
+                chartData = topics.map(t => t.avg_views);
+                chartWords = topics.map(t => t.top_words ? t.top_words.join(', ') : '');
+                chartTitle = 'Trending Topics by Avg Views';
+                chartYTitle = 'Avg Views';
+                chartTooltip = (context, topics) => {
+                    let label = context.dataset.label + ': ' + context.parsed.y;
+                    let idx = context.dataIndex;
+                    let words = topics[idx].top_words ? topics[idx].top_words.join(', ') : '';
+                    if (words) label += '\nTop words: ' + words;
+                    return label;
+                };
+            } else if (ranking === 'emerging') {
+                const response = await fetch('/api/emerging_topics?window_days=30&min_baseline_count=5&top_n=10');
+                const data = await response.json();
+                topics = data.topics || [];
+                let windowLabel = data.window_days ? `Window: <b>${data.window_days} days</b>` : '';
+                html = `<div style='margin-bottom:0.5em;color:#333;'>${windowLabel}</div>`;
+                html += '<div class="section-title">Emerging Topics (spiking topics, recent vs. baseline window)</div>';
+                if (topics.length === 0) {
+                    html += '<div>No emerging topics available.</div>';
+                    document.getElementById('trendingTopics').innerHTML = html;
+                    document.getElementById('trendingTopicsChart').style.display = 'none';
+                    document.getElementById('trendingTopicsProgress').style.display = 'none';
+                    return;
+                }
+                html += '<table class="result-table"><tr><th>Topic ID</th><th>Top Words</th><th>Recent Count</th><th>Baseline Count</th><th>Count Ratio</th><th>Recent Avg Views</th><th>Baseline Avg Views</th><th>Avg Views Ratio</th></tr>';
+                for (const topic of topics) {
+                    html += `<tr>
+                        <td>${topic.topic_id}</td>
+                        <td>${(topic.top_words || []).join(', ')}</td>
+                        <td>${topic.recent_count}</td>
+                        <td>${topic.baseline_count}</td>
+                        <td>${topic.count_ratio.toFixed(2)}</td>
+                        <td>${topic.recent_avg_views.toFixed(1)}</td>
+                        <td>${topic.baseline_avg_views.toFixed(1)}</td>
+                        <td>${topic.avg_views_ratio.toFixed(2)}</td>
+                    </tr>`;
+                }
+                html += '</table>';
+                chartLabel = 'Count Ratio';
+                chartData = topics.map(t => t.count_ratio);
+                chartWords = topics.map(t => t.top_words ? t.top_words.join(', ') : '');
+                chartTitle = 'Emerging Topics by Count Ratio';
+                chartYTitle = 'Count Ratio';
+                chartTooltip = (context, topics) => {
+                    let label = context.dataset.label + ': ' + context.parsed.y.toFixed(2);
+                    let idx = context.dataIndex;
+                    let words = topics[idx].top_words ? topics[idx].top_words.join(', ') : '';
+                    if (words) label += '\nTop words: ' + words;
+                    return label;
+                };
+            }
+            document.getElementById('trendingTopics').innerHTML = html;
+            // Bar chart
+            if (topics.length > 0) {
+                const ctx = document.getElementById('trendingTopicsChart').getContext('2d');
+                document.getElementById('trendingTopicsChart').style.display = 'block';
+                if (window.trendingTopicsChart && typeof window.trendingTopicsChart.destroy === 'function') {
+                    window.trendingTopicsChart.destroy();
+                }
+                window.trendingTopicsChart = new Chart(ctx, {
+                    type: 'bar',
+                    data: {
+                        labels: topics.map(t => 'Topic ' + t.topic_id),
+                        datasets: [{
+                            label: chartLabel,
+                            data: chartData,
+                            backgroundColor: 'rgba(33, 150, 243, 0.6)'
+                        }]
+                    },
+                    options: {
+                        plugins: {
+                            tooltip: {
+                                callbacks: {
+                                    label: function(context) {
+                                        return chartTooltip(context, topics);
+                                    }
+                                }
+                            }
+                        },
+                        scales: {
+                            y: { beginAtZero: true, title: { display: true, text: chartYTitle } }
+                        }
+                    }
+                });
+            } else {
+                document.getElementById('trendingTopicsChart').style.display = 'none';
+            }
+            document.getElementById('trendingTopicsProgress').style.display = 'none';
+        }
+        // Attach handler to button and selector
+        const trendingTopicsRankingSelect = document.getElementById('trendingTopicsRankingSelect');
+        document.getElementById('showTrendingTopicsBtn').onclick = showTrendingTopics;
+        trendingTopicsRankingSelect.onchange = showTrendingTopics;
+        // Topic Explorer
+        document.getElementById('showTopicExplorerBtn').onclick = async function() {
+            const explorerDiv = document.getElementById('topicExplorer');
+            explorerDiv.style.display = explorerDiv.style.display === 'none' ? 'block' : 'none';
+            if (explorerDiv.style.display === 'block') {
+                // Load topics for dropdown
+                const select = document.getElementById('topicSelect');
+                select.innerHTML = '';
+                document.getElementById('topicWordsChart').style.display = 'none';
+                document.getElementById('topicWordsProgress').style.display = 'block';
+                const response = await fetch('/api/topics');
+                const topics = await response.json();
+                for (const topic of topics) {
+                    const option = document.createElement('option');
+                    option.value = topic.topic_id;
+                    option.text = `Topic ${topic.topic_id} (${topic.count} docs)`;
+                    select.appendChild(option);
+                }
+                document.getElementById('topicWordsProgress').style.display = 'none';
+                if (topics.length > 0) {
+                    select.value = topics[0].topic_id;
+                    select.dispatchEvent(new Event('change'));
+                }
+            }
+        };
+        document.getElementById('topicSelect').onchange = async function() {
+            const topicId = document.getElementById('topicSelect').value;
+            document.getElementById('topicWordsProgress').style.display = 'block';
+            document.getElementById('topicWordsChart').style.display = 'none';
+            const response = await fetch(`/api/topic_words/${topicId}`);
+            const wordsScores = await response.json();
+            document.getElementById('topicWordsProgress').style.display = 'none';
+            if (!wordsScores || wordsScores.length === 0) {
+                document.getElementById('topicWordsChart').style.display = 'none';
+                return;
+            }
+            const words = wordsScores.map(ws => ws[0]);
+            const scores = wordsScores.map(ws => ws[1]);
+            const ctx = document.getElementById('topicWordsChart').getContext('2d');
+            document.getElementById('topicWordsChart').style.display = 'block';
+            if (window.topicWordsChart && typeof window.topicWordsChart.destroy === 'function') {
+                window.topicWordsChart.destroy();
+            }
+            window.topicWordsChart = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: words,
+                    datasets: [{
+                        label: 'Word Importance',
+                        data: scores,
+                        backgroundColor: 'rgba(76, 175, 80, 0.6)'
+                    }]
+                },
+                options: {
+                    plugins: {
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    return context.dataset.label + ': ' + context.parsed.y;
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        y: { beginAtZero: true }
+                    }
+                }
+            });
+        };
+        document.getElementById('showTopicTrendsBtn').onclick = async function() {
+            document.getElementById('topicTrendsProgress').style.display = 'block';
+            document.getElementById('topicTrendsChart').style.display = 'none';
+            const response = await fetch('/api/topic_trends');
+            const trends = await response.json();
+            document.getElementById('topicTrendsProgress').style.display = 'none';
+            if (!trends || trends.length === 0 || trends.message) {
+                alert(trends.message || 'No topic trends data available.');
+                return;
+            }
+            // Collect all quarters
+            let allQuarters = new Set();
+            for (const t of trends) for (const q of t.trend) allQuarters.add(q.month);
+            allQuarters = Array.from(allQuarters).sort();
+            // Prepare datasets
+            const datasets = trends.map((t, idx) => {
+                const color = `hsl(${(idx*47)%360},70%,50%)`;
+                const data = allQuarters.map(q => {
+                    const found = t.trend.find(x => x.month === q);
+                    return found ? found.avg_views : null;
+                });
+                return {
+                    label: 'Topic ' + t.topic_id,
+                    data,
+                    borderColor: color,
+                    backgroundColor: color,
+                    spanGaps: true,
+                    fill: false
+                };
+            });
+            const ctx = document.getElementById('topicTrendsChart').getContext('2d');
+            document.getElementById('topicTrendsChart').style.display = 'block';
+            if (window.topicTrendsChart && typeof window.topicTrendsChart.destroy === 'function') {
+                window.topicTrendsChart.destroy();
+            }
+            window.topicTrendsChart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: allQuarters,
+                    datasets: datasets
+                },
+                options: {
+                    plugins: {
+                        legend: { display: true },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    return context.dataset.label + ': ' + (context.parsed.y !== null ? context.parsed.y.toFixed(1) : '');
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        y: { beginAtZero: true, title: { display: true, text: 'Avg Views' } },
+                        x: { title: { display: true, text: 'Month' } }
+                    }
+                }
+            });
+        };
+        // Topic Clusters handler
+        async function showTopicClusters() {
+            document.getElementById('topicClustersProgress').style.display = 'block';
+            document.getElementById('topicClusters').innerHTML = '';
+            const threshold = parseFloat(document.getElementById('topicClustersThreshold').value);
+            const response = await fetch(`/api/topic_clusters?distance_threshold=${threshold}`);
+            const data = await response.json();
+            const clusters = data.clusters || [];
+            document.getElementById('topicClustersProgress').style.display = 'none';
+            let html = `<div class='section-title'>Topic Clusters (distance threshold: <b>${threshold}</b>)</div>`;
+            if (clusters.length === 0) {
+                html += '<div>No topic clusters found.</div>';
+                document.getElementById('topicClusters').innerHTML = html;
+                return;
+            }
+            html += `<div>Total clusters: <b>${clusters.length}</b></div>`;
+            clusters.sort((a, b) => b.topics.length - a.topics.length);
+            for (const cluster of clusters) {
+                html += `<div style='margin-top:1em; border:1px solid #ccc; border-radius:8px; padding:1em; background:#fafafa;'>`;
+                html += `<b>Cluster ${cluster.cluster_id}</b> &mdash; <b>${cluster.topics.length}</b> topics, <b>${cluster.texts_count}</b> texts, <b>Avg Views:</b> ${cluster.avg_views.toFixed(1)}`;
+                html += `<table class='result-table' style='margin-top:0.5em;'><tr><th>Topic ID</th><th>Top Words</th></tr>`;
+                for (const topic of cluster.topics) {
+                    html += `<tr><td>${topic.topic_id}</td><td>${(topic.top_words || []).join(', ')}</td></tr>`;
+                }
+                html += `</table></div>`;
+            }
+            document.getElementById('topicClusters').innerHTML = html;
+        }
+        document.getElementById('showTopicClustersBtn').onclick = showTopicClusters;
+        const topicClustersThresholdInput = document.getElementById('topicClustersThreshold');
+        topicClustersThresholdInput.onchange = showTopicClusters;
+        // Handler to update the plot image using the unified threshold
+        function updateTopicClustersPlotImg() {
+            const threshold = document.getElementById('topicClustersThreshold').value;
+            const method = document.getElementById('topicClustersPlotMethod').value;
+            const img = document.getElementById('topicClustersPlotImg');
+            img.src = `/api/topic_clusters_plot?distance_threshold=${threshold}&method=${method}&_=${Date.now()}`;
+        }
+        document.getElementById('showTopicClustersPlotBtn').onclick = updateTopicClustersPlotImg;
+        document.getElementById('topicClustersPlotMethod').onchange = updateTopicClustersPlotImg;
+        // Trending Clusters Section controls
+        const trendingClustersSection = document.getElementById('trendingClustersSection');
+        const trendingClustersControlsHtml = `
+          <label for="trendingClustersPeriod" style="margin-left:1em;">Period:</label>
+          <select id="trendingClustersPeriod">
+            <option value="M" selected>Month</option>
+            <option value="6M">6 Months</option>
+            <option value="A">Year</option>
+          </select>
+          <label for="trendingClustersRanking" style="margin-left:1em;">Rank by:</label>
+          <select id="trendingClustersRanking">
+            <option value="avg_views" selected>Avg Views</option>
+            <option value="texts_count">Texts Count</option>
+          </select>
+        `;
+        trendingClustersSection.insertAdjacentHTML('afterbegin', trendingClustersControlsHtml);
+        // Trending Clusters handler with controls
+        async function showTrendingClusters() {
+            document.getElementById('trendingClustersProgress').style.display = 'block';
+            document.getElementById('trendingClusters').innerHTML = '';
+            const threshold = document.getElementById('topicClustersThreshold').value;
+            const period = document.getElementById('trendingClustersPeriod').value;
+            const ranking = document.getElementById('trendingClustersRanking').value;
+            const response = await fetch(`/api/trending_topic_clusters?distance_threshold=${threshold}&period=${period}`);
+            const data = await response.json();
+            let clusters = data.clusters || [];
+            document.getElementById('trendingClustersProgress').style.display = 'none';
+            // Sort clusters by selected ranking method
+            if (ranking === 'avg_views') {
+                clusters = clusters.sort((a, b) => b.avg_views - a.avg_views);
+            } else if (ranking === 'texts_count') {
+                clusters = clusters.sort((a, b) => b.texts_count - a.texts_count);
+            }
+            let html = `<div class='section-title'>Trending Clusters (period: <b>${data.period}</b>, ranked by <b>${ranking === 'avg_views' ? 'Avg Views' : 'Texts Count'}</b>)</div>`;
+            if (clusters.length === 0) {
+                html += '<div>No trending clusters found.</div>';
+                document.getElementById('trendingClusters').innerHTML = html;
+                return;
+            }
+            html += `<table class='result-table'><tr><th>Cluster ID</th><th>Topics</th><th>Texts Count</th><th>Avg Views</th><th>Top Words (per topic)</th></tr>`;
+            for (const cluster of clusters) {
+                html += `<tr>
+                    <td>${cluster.cluster_id}</td>
+                    <td>${cluster.topics.join(', ')}</td>
+                    <td>${cluster.texts_count}</td>
+                    <td>${cluster.avg_views.toFixed(1)}</td>
+                    <td>${cluster.top_words.map(words => words.join(', ')).join(' | ')}</td>
+                </tr>`;
+            }
+            html += '</table>';
+            document.getElementById('trendingClusters').innerHTML = html;
+        }
+        document.getElementById('showTrendingClustersBtn').onclick = showTrendingClusters;
+        document.getElementById('trendingClustersPeriod').onchange = showTrendingClusters;
+        document.getElementById('trendingClustersRanking').onchange = showTrendingClusters;
+        // Trending Clusters (3-month moving average) handler
+        document.getElementById('showTrendingClustersMovingAvgBtn').onclick = async function() {
+            document.getElementById('trendingClustersProgress').style.display = 'block';
+            document.getElementById('trendingClustersMovingAvg').innerHTML = '';
+            const threshold = document.getElementById('topicClustersThreshold').value;
+            // New endpoint for moving average trending clusters
+            const response = await fetch(`/api/trending_topic_clusters_moving_avg?distance_threshold=${threshold}`);
+            const data = await response.json();
+            document.getElementById('trendingClustersProgress').style.display = 'none';
+            let html = `<div class='section-title'>Trending Clusters (Top 5 by 3x30-day Moving Average of Avg Views)</div>`;
+            html += `<div style='color:#1976d2;margin-bottom:0.7em;'>This method uses the average of the last three 30-day windows for each cluster, providing a more robust trending signal.</div>`;
+            const clusters = data.clusters || [];
+            if (clusters.length === 0) {
+                html += '<div>No trending clusters found using the moving average method.</div>';
+                document.getElementById('trendingClustersMovingAvg').innerHTML = html;
+                return;
+            }
+            html += `<table class='result-table'><tr><th>Cluster ID</th><th>Avg Views (3mo MA)</th><th>Topics</th><th>Top Words (per topic)</th></tr>`;
+            for (const cluster of clusters) {
+                html += `<tr>
+                    <td>${cluster.cluster_id}</td>
+                    <td>${cluster.avg_views.toFixed(1)}</td>
+                    <td>${cluster.topics.map(t => t.topic_id).join(', ')}</td>
+                    <td>${cluster.topics.map(t => t.top_words.join(', ')).join(' | ')}</td>
+                </tr>`;
+            }
+            html += '</table>';
+            document.getElementById('trendingClustersMovingAvg').innerHTML = html;
+        };
+    </script>
+</body>
+</html> 

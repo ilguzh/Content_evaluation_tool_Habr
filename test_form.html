@@ -1,0 +1,251 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Trending Topic Prediction</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Roboto', Arial, sans-serif;
+            background: #f7f9fb;
+            margin: 0;
+            padding: 0;
+            color: #222;
+        }
+        .container {
+            max-width: 500px;
+            margin: 2.5em auto;
+            background: #fff;
+            border-radius: 16px;
+            box-shadow: 0 4px 24px rgba(0,0,0,0.08);
+            padding: 2.5em 2em 2em 2em;
+        }
+        h2 {
+            text-align: center;
+            color: #1976d2;
+            margin-bottom: 0.5em;
+        }
+        .section-title {
+            margin-top: 1.5em;
+            font-weight: bold;
+            font-size: 1.1em;
+            color: #1976d2;
+            letter-spacing: 0.5px;
+        }
+        form {
+            margin-bottom: 1.5em;
+        }
+        textarea {
+            width: 100%;
+            min-height: 100px;
+            border-radius: 10px;
+            border: 1.5px solid #b0bec5;
+            padding: 1em;
+            font-size: 1.05em;
+            margin-bottom: 1em;
+            resize: vertical;
+            background: #f5f7fa;
+            transition: border 0.2s;
+        }
+        textarea:focus {
+            border: 1.5px solid #1976d2;
+            outline: none;
+        }
+        label {
+            font-weight: 500;
+            color: #333;
+            margin-right: 0.5em;
+        }
+        input[type="number"] {
+            border-radius: 6px;
+            border: 1.2px solid #b0bec5;
+            padding: 0.4em 0.7em;
+            font-size: 1em;
+            width: 5em;
+            margin-right: 1em;
+            background: #f5f7fa;
+            transition: border 0.2s;
+        }
+        input[type="number"]:focus {
+            border: 1.2px solid #1976d2;
+            outline: none;
+        }
+        button[type="submit"] {
+            background: linear-gradient(90deg, #1976d2 60%, #42a5f5 100%);
+            color: #fff;
+            border: none;
+            border-radius: 8px;
+            padding: 0.7em 2.2em;
+            font-size: 1.1em;
+            font-weight: bold;
+            cursor: pointer;
+            box-shadow: 0 2px 8px rgba(25, 118, 210, 0.08);
+            transition: background 0.2s, box-shadow 0.2s;
+        }
+        button[type="submit"]:hover {
+            background: linear-gradient(90deg, #1565c0 60%, #1976d2 100%);
+            box-shadow: 0 4px 16px rgba(25, 118, 210, 0.13);
+        }
+        #progress {
+            display: none;
+            color: #1976d2;
+            font-weight: bold;
+            margin-top: 1em;
+            text-align: center;
+        }
+        .trending-status {
+            display: flex;
+            align-items: center;
+            gap: 0.7em;
+            margin: 1.5em 0 1em 0;
+            font-size: 1.2em;
+        }
+        .trending-dot {
+            width: 18px;
+            height: 18px;
+            border-radius: 50%;
+            display: inline-block;
+        }
+        .trending-yes {
+            background: linear-gradient(90deg, #43e97b 0%, #38f9d7 100%);
+            box-shadow: 0 0 8px #43e97b99;
+        }
+        .trending-no {
+            background: linear-gradient(90deg, #ff5858 0%, #f09819 100%);
+            box-shadow: 0 0 8px #ff585899;
+        }
+        .explanation-box {
+            background: #f5f7fa;
+            border-radius: 10px;
+            padding: 1.2em 1em 1em 1em;
+            margin-top: 1.2em;
+            font-size: 1.05em;
+            color: #222;
+            box-shadow: 0 2px 8px rgba(25, 118, 210, 0.04);
+        }
+        .assignment-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 1em;
+            background: #f9fbfd;
+            border-radius: 10px;
+            overflow: hidden;
+            box-shadow: 0 2px 8px rgba(25, 118, 210, 0.04);
+        }
+        .assignment-table th, .assignment-table td {
+            border: 1px solid #e3eaf2;
+            padding: 10px 8px;
+            text-align: left;
+        }
+        .assignment-table th {
+            background: #e3f0fa;
+            color: #1976d2;
+            font-weight: 600;
+        }
+        .assignment-table tr:nth-child(even) {
+            background: #f5f7fa;
+        }
+        @media (max-width: 600px) {
+            .container { padding: 1em; }
+            .assignment-table th, .assignment-table td { padding: 7px 4px; }
+        }
+        .dashboard-btn {
+            display: inline-block;
+            background: linear-gradient(90deg, #1976d2 60%, #42a5f5 100%);
+            color: #fff;
+            border: none;
+            border-radius: 8px;
+            padding: 0.7em 2.2em;
+            font-size: 1.1em;
+            font-weight: bold;
+            text-decoration: none;
+            margin-top: 1em;
+            box-shadow: 0 2px 8px rgba(25, 118, 210, 0.08);
+            transition: background 0.2s, box-shadow 0.2s;
+        }
+        .dashboard-btn:hover {
+            background: linear-gradient(90deg, #1565c0 60%, #1976d2 100%);
+            box-shadow: 0 4px 16px rgba(25, 118, 210, 0.13);
+            color: #fff;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h2>Trending Topic Prediction</h2>
+        <form id="analyzeForm" method="POST" action="http://127.0.0.1:8000/analyze">
+            <label for="text">Paste your text:</label><br>
+            <textarea name="text" id="text" rows="8" placeholder="Paste your text here..."></textarea><br>
+            <label for="clusterThreshold" style="font-size:0.97em;">Cluster threshold:</label>
+            <input type="number" id="clusterThreshold" min="0.01" max="1" step="0.01" value="0.05">
+            <button type="submit">Analyze</button>
+        </form>
+        <div id="progress">Analyzing, please wait...</div>
+        <div id="result"></div>
+        <div style="text-align:center; margin-top:2em;">
+            <a href="http://127.0.0.1:8000/static/dashboard.html" target="_blank" class="dashboard-btn">Go to Dashboard</a>
+        </div>
+    </div>
+    <script>
+        document.getElementById('analyzeForm').onsubmit = async function(e) {
+            e.preventDefault();
+            document.getElementById('progress').style.display = 'block';
+            document.getElementById('result').innerHTML = '';
+            const text = this.text.value;
+            const threshold = document.getElementById('clusterThreshold').value;
+            const response = await fetch(this.action + '?cluster_threshold=' + threshold, {
+                method: 'POST',
+                headers: {'Content-Type': 'text/plain'},
+                body: text
+            });
+            const result = await response.json();
+            document.getElementById('progress').style.display = 'none';
+            renderResult(result);
+        };
+
+        function renderResult(data) {
+            let html = '';
+            // --- Trending Status ---
+            html += '<div class="trending-status">';
+            if (data.is_cluster_trending) {
+                html += '<span class="trending-dot trending-yes"></span>';
+                html += '<span style="color:#2e7d32;font-weight:bold;">This text is part of a <span style="color:#1976d2;">trending cluster</span>!</span>';
+            } else {
+                html += '<span class="trending-dot trending-no"></span>';
+                html += '<span style="color:#b71c1c;font-weight:bold;">This text is <span style="color:#1976d2;">not trending</span> right now.</span>';
+            }
+            html += '</div>';
+
+            // --- Assignment Table ---
+            html += '<table class="assignment-table">';
+            html += '<tr><th>Assigned Cluster</th><td>' + (data.assigned_cluster ?? '-') + '</td></tr>';
+            html += '<tr><th>Assigned Topic</th><td>' + (data.best_topic_semantic ?? '-') + '</td></tr>';
+            if (data.top_words && data.top_words.length > 0) {
+                html += '<tr><th>Top Words</th><td>' + data.top_words.join(', ') + '</td></tr>';
+            }
+            if (typeof data.avg_views !== 'undefined') {
+                html += '<tr><th>Avg Views (Cluster)</th><td>' + data.avg_views.toLocaleString(undefined, {maximumFractionDigits: 1}) + '</td></tr>';
+            }
+            if (typeof data.avg_comments !== 'undefined') {
+                html += '<tr><th>Avg Comments (Cluster)</th><td>' + data.avg_comments.toLocaleString(undefined, {maximumFractionDigits: 1}) + '</td></tr>';
+            }
+            html += '</table>';
+
+            // --- Explanation ---
+            html += '<div class="section-title">Why does the model think this text will be trending?</div>';
+            let exp = data.explanation || '';
+            // Format explanation: bold section headers, line breaks
+            exp = exp.replace(/Why is this topic considered similar to your input\?/g, '<b>Why is this topic considered similar to your input?</b>')
+                .replace(/Top words of topic [0-9]+:/g, match => '<b>' + match + '</b>')
+                .replace(/This topic is mainly about:/g, '<b>This topic is mainly about:</b>')
+                .replace(/Most related topics:/g, '<b>Most related topics:</b>')
+                .replace(/\\n/g, '\n');
+            exp = exp.replace(/\n/g, '<br>');
+            html += '<div class="explanation-box">' + exp + '</div>';
+
+            document.getElementById('result').innerHTML = html;
+        }
+    </script>
+</body>
+</html> 
