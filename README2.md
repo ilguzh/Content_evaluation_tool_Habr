@@ -61,6 +61,12 @@ nltk.download('punkt')
 
 Place the following files in the project root (or as specified):
 
+1) get habr dataset
+2) preprocess it with Spacy
+3) Use robust_embeddings to get embedings
+4) use topic_modeling_colab to create topic model files
+5) get texts with topics csv using merge_with_topics
+
 - `texts_with_topics.csv` (main data, **~5GB**)
 - `bertopic_model_sber_sbert_REDUCED` (BERTopic model, **~3GB**)
 - `topicmodel2305/topic_embeddings_sber.pkl` (topic embeddings, **~600KB**)
